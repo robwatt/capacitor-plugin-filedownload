@@ -23,7 +23,7 @@ public class FileDownloadPlugin: CAPPlugin {
         let destination = call.getString("destination") ?? "DOCUMENT"
         let headers = call.getObject("headers") as? [String: String] ?? [:]
         let body = call.getObject("body")
-        let method = !headers.isEmpty || body != nil ? HTTPMethod.post : HTTPMethod.get
+        let method = body != nil ? HTTPMethod.post : HTTPMethod.get
         
         let fileDirectory = getFileDirectory(destination: destination)
         let newDestination = createDestination(directory: fileDirectory, fileName: fileName)
