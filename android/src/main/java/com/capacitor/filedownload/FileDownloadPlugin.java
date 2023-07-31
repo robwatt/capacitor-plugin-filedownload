@@ -1,24 +1,12 @@
 package com.capacitor.filedownload;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -28,19 +16,16 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import org.json.JSONException;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Iterator;
 
 @CapacitorPlugin(name = "FileDownload", permissions = {
         // SDK VERSIONS 32 AND BELOW
@@ -66,16 +51,9 @@ public class FileDownloadPlugin extends Plugin {
 
     private FileDownload implementation = new FileDownload();
 
-    private OkHttpClient okHttpClient;
+    private HttpURLConnection connection = null;
+
     private String pathStr;
-
-    private Call downloadInstance;
-
-
-    @Override
-    public void load() {
-        okHttpClient = new OkHttpClient.Builder().build();
-    }
 
     @PluginMethod
     public void download(PluginCall call) throws JSONException {
@@ -84,8 +62,9 @@ public class FileDownloadPlugin extends Plugin {
 
     @PluginMethod
     public void cancel(PluginCall call) {
-        if (downloadInstance != null && !downloadInstance.isCanceled()) {
-            downloadInstance.cancel();
+        if (connection != null) {
+            connection.disconnect();
+            connection = null;
         }
         call.resolve();
     }
@@ -93,10 +72,8 @@ public class FileDownloadPlugin extends Plugin {
     @PluginMethod
     public void isCanceled(PluginCall call) {
         JSObject ret = new JSObject();
-        if (downloadInstance != null) {
-            ret.put("isCanceled", downloadInstance.isCanceled());
-            call.resolve(ret);
-        }
+        ret.put("isCanceled", connection == null);
+        call.resolve(ret);
     }
 
     @PluginMethod
@@ -136,17 +113,21 @@ public class FileDownloadPlugin extends Plugin {
         call.resolve();
     }
 
-    private void downloadFile(final PluginCall call) throws JSONException {
-        String url = call.getString("url", "");
+    /**
+     * Downloads the file using URLConnection.
+     *
+     * @param call PluginCall used for callback.
+     */
+    private void downloadFile(final PluginCall call) {
+        String urlString = call.getString("url", "");
         final String fileName = call.getString("fileName", "");
         String destination = call.getString("destination", "DOCUMENT");
 
-        assert url != null;
-        if (url.isEmpty()) {
+        assert urlString != null;
+        if (urlString.isEmpty()) {
             call.reject("URL is required");
             return;
         }
-
 
         assert fileName != null;
         if (fileName.isEmpty()) {
@@ -154,109 +135,82 @@ public class FileDownloadPlugin extends Plugin {
             return;
         }
 
-        Request.Builder requestBuilder = new Request.Builder().url(url);
+        URL url;
+        InputStream is = null;
 
-        //设置请求头
-        JSObject headers = call.getObject("headers");
-        if (headers != null) {
-            for (Iterator<String> it = headers.keys(); it.hasNext(); ) {
-                String key = it.next();
-                String value = headers.getString(key);
-                assert value != null;
-                requestBuilder.addHeader(key, value);
-            }
-        }
+        try {
+            url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
 
-        // 设置请求体
-        JSObject requestBodyObject = call.getObject("body", null);
-        if (requestBodyObject != null) {
-            JsonObject jsonObject = new JsonObject();
-            for (Iterator<String> it = requestBodyObject.keys(); it.hasNext(); ) {
-                String key = it.next();
-                Object value = requestBodyObject.get(key);
-                if (value instanceof String) {
-                    jsonObject.addProperty(key, (String) value);
-                } else if (value instanceof Number) {
-                    jsonObject.addProperty(key, (Number) value);
-                } else if (value instanceof Boolean) {
-                    jsonObject.addProperty(key, (Boolean) value);
-                } else if (value instanceof Character) {
-                    jsonObject.addProperty(key, (Character) value);
+            // add headers
+            JSObject headers = call.getObject("headers");
+            if (headers != null) {
+                for (Iterator<String> it = headers.keys(); it.hasNext(); ) {
+                    String key = it.next();
+                    String value = headers.getString(key);
+                    assert value != null;
+                    connection.addRequestProperty(key, value);
                 }
             }
 
-            Gson gson = new Gson();
-            String jsonBody = gson.toJson(jsonObject);
+            // connect
+            connection.connect();
 
-            RequestBody requestBody = RequestBody.create(jsonBody, MediaType.parse("application/json"));
-            requestBuilder.method("POST", requestBody);
-        }
+            // test if the response is OK
+            assert connection.getResponseCode() == HttpURLConnection.HTTP_OK;
 
-        Request request = requestBuilder.build();
+            // create destination file
+            int totalBytes = connection.getContentLength();
+            is = url.openStream();
 
-        downloadInstance = okHttpClient.newCall(request);
-        downloadInstance.enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call __call, @NonNull IOException e) {
-                call.reject("download fail: " + e.getMessage());
-                downloadInstance.cancel();
+            assert destination != null;
+            File downloadDestination = getDefaultDownloadDestination(destination);
+            File file = new File(downloadDestination, fileName);
+            pathStr = file.getAbsolutePath();
+
+            // create folders if needed
+            File parentDir = file.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                if (!parentDir.mkdirs()) {
+                    call.reject("Failed to create parent directory");
+                    return;
+                }
             }
 
-            @Override
-            public void onResponse(@NonNull Call __call, @NonNull Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    call.reject("Unexpected code " + response);
-                    return;
-                }
+            // download the body
+            saveFile(file, totalBytes, is);
 
-                ResponseBody responseBody = response.body();
-                if (responseBody == null) {
-                    call.reject("Download failed: Response body is null");
-                    return;
-                }
-
-                if (downloadInstance.isCanceled()) {
-                    return;
-                }
-
+            call.resolve(createSuccessResponse());
+        } catch (Exception e) {
+            Log.e("ERROR DOWNLOADING", "Unable to download" + e.getMessage());
+            call.reject("download fail: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
                 try {
-                    assert destination != null;
-                    File downloadDestination = getDefaultDownloadDestination(destination);
-                    File file = new File(downloadDestination, fileName);
-                    pathStr = file.getAbsolutePath();
-                    File parentDir = file.getParentFile();
-                    if (parentDir != null && !parentDir.exists()) {
-                        if (!parentDir.mkdirs()) {
-                            call.reject("Failed to create parent directory");
-                            return;
-                        }
+                    if (is != null) {
+                        is.close();
                     }
-
-
-                    assert response.body() != null;
-                    InputStream inputStream = response.body().byteStream();
-                    FileOutputStream outputStream = new FileOutputStream(file);
-                    byte[] buffer = new byte[4096];
-                    int length;
-                    long downloadedBytes = 0;
-                    long totalBytes = response.body().contentLength();
-                    while ((length = inputStream.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, length);
-                        downloadedBytes += length;
-                        int progress = (int) (downloadedBytes * 100 / totalBytes);
-                        notifyProgress(progress);
-                    }
-                    outputStream.flush();
-                    outputStream.close();
-                    inputStream.close();
-
-                    call.resolve(createSuccessResponse());
                 } catch (IOException e) {
-                    call.reject("download fail: " + e.getMessage());
-                    __call.cancel();
+                    Log.d("ERROR_DOWNLOADING", "Unable to close input stream" + e.getMessage());
                 }
+                connection = null;
             }
-        });
+        }
+    }
+
+    private void saveFile(File file, long totalBytes, InputStream is) throws Exception {
+        FileOutputStream fos = new FileOutputStream(file);
+        byte[] data = new byte[1024];
+        long downloadedBytes = 0;
+        int length;
+        while ((length = is.read(data)) != -1) {
+            downloadedBytes += length;
+            int progress = (int) (downloadedBytes * 100 / totalBytes);
+            notifyProgress(progress);
+            fos.write(data, 0, length);
+        }
+        fos.close();
     }
 
     private File getDefaultDownloadDestination(String destination) {
