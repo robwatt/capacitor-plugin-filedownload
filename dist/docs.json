@@ -1,0 +1,345 @@
+{
+  "api": {
+    "name": "FileDownloadPlugin",
+    "slug": "filedownloadplugin",
+    "docs": "",
+    "tags": [],
+    "methods": [
+      {
+        "name": "download",
+        "signature": "(options: FileDownloadOptions) => Promise<FileDownloadResponse>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "FileDownloadOptions"
+          }
+        ],
+        "returns": "Promise<FileDownloadResponse>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [
+          "FileDownloadResponse",
+          "FileDownloadOptions"
+        ],
+        "slug": "download"
+      },
+      {
+        "name": "cancel",
+        "signature": "() => Promise<void>",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "tags": [],
+        "docs": "cancel download",
+        "complexTypes": [],
+        "slug": "cancel"
+      },
+      {
+        "name": "isCanceled",
+        "signature": "() => Promise<CancelStatus>",
+        "parameters": [],
+        "returns": "Promise<CancelStatus>",
+        "tags": [],
+        "docs": "get status of download",
+        "complexTypes": [
+          "CancelStatus"
+        ],
+        "slug": "iscanceled"
+      },
+      {
+        "name": "checkPermissions",
+        "signature": "() => Promise<PermissionStatus>",
+        "parameters": [],
+        "returns": "Promise<PermissionStatus>",
+        "tags": [],
+        "docs": "only for android",
+        "complexTypes": [
+          "PermissionStatus"
+        ],
+        "slug": "checkpermissions"
+      },
+      {
+        "name": "requestPermissions",
+        "signature": "() => Promise<PermissionStatus>",
+        "parameters": [],
+        "returns": "Promise<PermissionStatus>",
+        "tags": [],
+        "docs": "only for android",
+        "complexTypes": [
+          "PermissionStatus"
+        ],
+        "slug": "requestpermissions"
+      },
+      {
+        "name": "openSetting",
+        "signature": "() => Promise<void>",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "tags": [],
+        "docs": "open app setting, only for android",
+        "complexTypes": [],
+        "slug": "opensetting"
+      },
+      {
+        "name": "addListener",
+        "signature": "(eventName: 'downloadProgress', listenerFunc: (progress: FileDownloadProgress) => void) => Promise<PluginListenerHandle>",
+        "parameters": [
+          {
+            "name": "eventName",
+            "docs": "",
+            "type": "'downloadProgress'"
+          },
+          {
+            "name": "listenerFunc",
+            "docs": "",
+            "type": "(progress: FileDownloadProgress) => void"
+          }
+        ],
+        "returns": "Promise<PluginListenerHandle>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [
+          "PluginListenerHandle",
+          "FileDownloadProgress"
+        ],
+        "slug": "addlistenerdownloadprogress"
+      }
+    ],
+    "properties": []
+  },
+  "interfaces": [
+    {
+      "name": "FileDownloadResponse",
+      "slug": "filedownloadresponse",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "path",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "FileDownloadOptions",
+      "slug": "filedownloadoptions",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "url",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        },
+        {
+          "name": "fileName",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        },
+        {
+          "name": "destination",
+          "tags": [
+            {
+              "text": "ios default: Document\nandroid default: External Storage",
+              "name": "default"
+            }
+          ],
+          "docs": "Download file destination",
+          "complexTypes": [
+            "Destination"
+          ],
+          "type": "Destination"
+        },
+        {
+          "name": "headers",
+          "tags": [],
+          "docs": "request headers, when headers has value, url must be a http request with POST method",
+          "complexTypes": [
+            "Record"
+          ],
+          "type": "Record<string, string>"
+        },
+        {
+          "name": "body",
+          "tags": [],
+          "docs": "request body, when body has value, url must be a http request width POST method",
+          "complexTypes": [
+            "Record"
+          ],
+          "type": "Record<string, unknown>"
+        },
+        {
+          "name": "downloadTitle",
+          "tags": [
+            {
+              "text": "since 1.0.6",
+              "name": "deprecated"
+            }
+          ],
+          "docs": "Downloader Title， Only Android",
+          "complexTypes": [],
+          "type": "string | undefined"
+        },
+        {
+          "name": "downloadDescription",
+          "tags": [
+            {
+              "text": "since 1.0.6",
+              "name": "deprecated"
+            }
+          ],
+          "docs": "Downloader Description， Only Android",
+          "complexTypes": [],
+          "type": "string | undefined"
+        }
+      ]
+    },
+    {
+      "name": "CancelStatus",
+      "slug": "cancelstatus",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "isCanceled",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "name": "PermissionStatus",
+      "slug": "permissionstatus",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "storage",
+          "tags": [],
+          "docs": "prompt: 首次申请，询问。\nprompt-with-rationale： 每次都询问。\ngranted： 已获取权限。\ndenied：权限已拒绝。",
+          "complexTypes": [
+            "PermissionState"
+          ],
+          "type": "PermissionState"
+        }
+      ]
+    },
+    {
+      "name": "PluginListenerHandle",
+      "slug": "pluginlistenerhandle",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "remove",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "() => Promise<void>"
+        }
+      ]
+    },
+    {
+      "name": "FileDownloadProgress",
+      "slug": "filedownloadprogress",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "progress",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "number"
+        }
+      ]
+    }
+  ],
+  "enums": [],
+  "typeAliases": [
+    {
+      "name": "Destination",
+      "slug": "destination",
+      "docs": "download destination , on android default is \"DOWNLOAD\", on ios default is \"DOCUMENT\"",
+      "types": [
+        {
+          "text": "\"DOCUMENT\"",
+          "complexTypes": []
+        },
+        {
+          "text": "\"EXTERNAL\"",
+          "complexTypes": []
+        },
+        {
+          "text": "\"EXTERNAL_STORAGE\"",
+          "complexTypes": []
+        },
+        {
+          "text": "\"DATA\"",
+          "complexTypes": []
+        },
+        {
+          "text": "\"CACHE\"",
+          "complexTypes": []
+        },
+        {
+          "text": "\"LIBRARY\"",
+          "complexTypes": []
+        }
+      ]
+    },
+    {
+      "name": "Record",
+      "slug": "record",
+      "docs": "Construct a type with a set of properties K of type T",
+      "types": [
+        {
+          "text": "{\r\n    [P in K]: T;\r\n}",
+          "complexTypes": [
+            "K",
+            "T"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PermissionState",
+      "slug": "permissionstate",
+      "docs": "",
+      "types": [
+        {
+          "text": "'prompt'",
+          "complexTypes": []
+        },
+        {
+          "text": "'prompt-with-rationale'",
+          "complexTypes": []
+        },
+        {
+          "text": "'granted'",
+          "complexTypes": []
+        },
+        {
+          "text": "'denied'",
+          "complexTypes": []
+        }
+      ]
+    }
+  ],
+  "pluginConfigs": []
+}
