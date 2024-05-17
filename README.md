@@ -182,7 +182,7 @@ open app setting, only for android
 ### addListener('downloadProgress', ...)
 
 ```typescript
-addListener(eventName: 'downloadProgress', listenerFunc: (progress: FileDownloadProgress) => void) => Promise<PluginListenerHandle> & PluginListenerHandle
+addListener(eventName: 'downloadProgress', listenerFunc: (progress: FileDownloadProgress) => void) => Promise<PluginListenerHandle>
 ```
 
 | Param              | Type                                                                                         |
@@ -190,7 +190,7 @@ addListener(eventName: 'downloadProgress', listenerFunc: (progress: FileDownload
 | **`eventName`**    | <code>'downloadProgress'</code>                                                              |
 | **`listenerFunc`** | <code>(progress: <a href="#filedownloadprogress">FileDownloadProgress</a>) =&gt; void</code> |
 
-**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
 --------------------
 

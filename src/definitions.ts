@@ -25,7 +25,7 @@ export interface FileDownloadPlugin {
   addListener(
     eventName: 'downloadProgress',
     listenerFunc: (progress: FileDownloadProgress) => void,
-  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+  ): Promise<PluginListenerHandle>;
 }
 
 export interface PermissionStatus {
